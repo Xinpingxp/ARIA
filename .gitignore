@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Data files
+data/
+models/
+lightning_logs/
+
+# Logs and temporary files
+*.log
+*.csv
+*.h5
+*.ckpt
+
+# OS files
+.DS_Store
+Thumbs.db
