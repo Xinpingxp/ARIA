@@ -1,0 +1,10 @@
+{
+  "best_model_path": "C:\\Users\\admin\\Documents\\SUTD\\ADL\\ARIA\\models\\ad-classifier-epoch=03-val_acc=1.00.ckpt",
+  "best_val_acc": 0.9978025555610657,
+  "test_results": [
+    {
+      "test_loss": 0.042775772511959076,
+      "test_acc": 0.9824205636978149
+    }
+  ]
+}
