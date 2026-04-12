@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
 from pathlib import Path
 import os
 import argparse
@@ -77,7 +78,7 @@ def infer_ad_risk(image_path, model_path, output_dir):
     print(f"Predicted Class: {predicted_class}")
     print("Probabilities:")
     for i, (class_name, prob) in enumerate(zip(class_names, probabilities)):
-        print(".3f")
+        print(f"  {class_name}: {prob:.3f}")
 
     # Generate Grad-CAM
     grad_cam = GradCAM2D(model, model.backbone.layer4)

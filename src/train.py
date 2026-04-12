@@ -44,6 +44,15 @@ class ADClassificationModel(pl.LightningModule):
         self.log('val_acc', acc, prog_bar=True)
         return loss
 
+    def test_step(self, batch, batch_idx):
+        x, y = batch
+        y_hat = self(x)
+        loss = self.criterion(y_hat, y)
+        acc = (y_hat.argmax(dim=1) == y).float().mean()
+        self.log('test_loss', loss, prog_bar=True)
+        self.log('test_acc', acc, prog_bar=True)
+        return loss
+
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(

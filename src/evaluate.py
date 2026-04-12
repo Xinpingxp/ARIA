@@ -5,38 +5,44 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 import os
-import pandas as pd
+import json
 from torch.utils.data import DataLoader
 from model import create_model
-from train import MRIDataset
+from preprocess import MRIImageDataset, get_data_loaders
+from torchvision import transforms
 
-def evaluate_model(model_path, test_data_path, output_dir):
+def evaluate_model(model_path, data_splits_path, output_dir):
     """
     Evaluate the trained model and generate performance metrics.
     """
     os.makedirs(output_dir, exist_ok=True)
 
+    # Load data splits
+    with open(data_splits_path, 'r') as f:
+        splits = json.load(f)
+
     # Load model
     model = create_model(num_classes=3)
-    checkpoint = torch.load(model_path)
+    checkpoint = torch.load(model_path, map_location='cpu')
     model.load_state_dict(checkpoint['state_dict'])
     model.eval()
 
-    # Load test data
-    metadata_file = os.path.join(test_data_path, "processed_metadata.csv")
-    df = pd.read_csv(metadata_file)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device)
 
-    # For demo, use same dummy labels as training
-    np.random.seed(42)
-    labels = np.random.choice([0, 1, 2], size=len(df))
+    # Build test loader
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5], std=[0.5])
+    ])
 
-    # Use last 10% as test
-    test_size = int(0.1 * len(df))
-    test_data = df[-test_size:]
-    test_labels = labels[-test_size:]
-
-    test_dataset = MRIDataset(test_data['processed_path'].tolist(), test_labels)
-    test_loader = DataLoader(test_dataset, batch_size=4, shuffle=False, num_workers=0)
+    test_dataset = MRIImageDataset(
+        splits['test']['images'],
+        splits['test']['labels'],
+        transform=transform
+    )
+    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=0)
 
     # Evaluate
     all_preds = []
@@ -44,14 +50,14 @@ def evaluate_model(model_path, test_data_path, output_dir):
     all_probs = []
 
     with torch.no_grad():
-        for batch in test_loader:
-            x, y = batch
+        for x, y in test_loader:
+            x = x.to(device)
             outputs = model(x)
             probs = torch.softmax(outputs, dim=1)
             preds = torch.argmax(outputs, dim=1)
 
             all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(y.cpu().numpy())
+            all_labels.extend(y.numpy())
             all_probs.extend(probs.cpu().numpy())
 
     all_preds = np.array(all_preds)
@@ -89,24 +95,20 @@ def evaluate_model(model_path, test_data_path, output_dir):
         'confusion_matrix': cm.tolist()
     }
 
-    import json
     with open(os.path.join(output_dir, 'evaluation_metrics.json'), 'w') as f:
         json.dump(metrics, f, indent=2)
 
     return metrics
 
 if __name__ == "__main__":
-    model_path = os.path.join(os.path.dirname(__file__), '..', 'models', 'best_model.ckpt')  # Adjust path
-    test_data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'processed')
+    data_splits_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'processed', 'data_splits.json')
     output_dir = os.path.join(os.path.dirname(__file__), '..', 'reports')
 
-    # Find the best model if not specified
+    # Find the best model
     models_dir = Path(os.path.join(os.path.dirname(__file__), '..', 'models'))
     ckpt_files = list(models_dir.glob("*.ckpt"))
-    if ckpt_files:
-        model_path = str(max(ckpt_files, key=lambda x: x.stat().st_mtime))
-
-    if os.path.exists(model_path):
-        evaluate_model(model_path, test_data_path, output_dir)
-    else:
+    if not ckpt_files:
         print("Model checkpoint not found. Run train.py first.")
+    else:
+        model_path = str(max(ckpt_files, key=lambda x: x.stat().st_mtime))
+        evaluate_model(model_path, data_splits_path, output_dir)
