@@ -1,18 +1,21 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import resnet18
+from torchvision.models import resnet18, ResNet18_Weights
 
 class ADClassifier2D(nn.Module):
-    def __init__(self, num_classes=3):
+    def __init__(self, num_classes=3, dropout=0.5):
         super(ADClassifier2D, self).__init__()
 
-        # Use torchvision's ResNet18 as backbone, adapted for single channel
-        self.backbone = resnet18(pretrained=False)
+        # Use pretrained ResNet18 backbone (ImageNet weights)
+        self.backbone = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         self.backbone.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
 
-        # Replace final layer for our classification
-        self.backbone.fc = nn.Linear(512, num_classes)
+        # Replace final layer with dropout + classifier
+        self.backbone.fc = nn.Sequential(
+            nn.Dropout(p=dropout),
+            nn.Linear(512, num_classes)
+        )
 
     def forward(self, x):
         return self.backbone(x)
@@ -34,7 +37,7 @@ class ADClassifier2D(nn.Module):
 
         x = self.backbone.avgpool(feature_maps)
         x = torch.flatten(x, 1)
-        x = self.backbone.fc(x)
+        x = self.backbone.fc[1](x)  # skip dropout for feature extraction
         return x, feature_maps
 
 def create_model(num_classes=3):

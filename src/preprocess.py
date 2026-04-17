@@ -7,6 +7,7 @@ from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 import pandas as pd
+from sklearn.model_selection import StratifiedShuffleSplit
 
 class MRIImageDataset(Dataset):
     def __init__(self, image_paths, labels, transform=None):
@@ -52,28 +53,25 @@ def create_data_splits(data_path, output_path, val_split=0.2, test_split=0.1):
             all_images.extend(image_files)
             all_labels.extend(labels)
 
-    # Shuffle
-    indices = np.arange(len(all_images))
-    np.random.seed(42)
-    np.random.shuffle(indices)
+    all_images = np.array(all_images)
+    all_labels = np.array(all_labels)
 
-    all_images = [all_images[i] for i in indices]
-    all_labels = [all_labels[i] for i in indices]
+    # Stratified train+val / test split
+    sss_test = StratifiedShuffleSplit(n_splits=1, test_size=test_split, random_state=42)
+    trainval_idx, test_idx = next(sss_test.split(all_images, all_labels))
 
-    # Split
-    n_total = len(all_images)
-    n_test = int(test_split * n_total)
-    n_val = int(val_split * n_total)
-    n_train = n_total - n_test - n_val
+    # Stratified train / val split
+    sss_val = StratifiedShuffleSplit(n_splits=1, test_size=val_split / (1 - test_split), random_state=42)
+    train_idx, val_idx = next(sss_val.split(all_images[trainval_idx], all_labels[trainval_idx]))
+    train_idx = trainval_idx[train_idx]
+    val_idx = trainval_idx[val_idx]
 
-    train_images = all_images[:n_train]
-    train_labels = all_labels[:n_train]
-
-    val_images = all_images[n_train:n_train+n_val]
-    val_labels = all_labels[n_train:n_train+n_val]
-
-    test_images = all_images[n_train+n_val:]
-    test_labels = all_labels[n_train+n_val:]
+    train_images = all_images[train_idx].tolist()
+    train_labels = all_labels[train_idx].tolist()
+    val_images = all_images[val_idx].tolist()
+    val_labels = all_labels[val_idx].tolist()
+    test_images = all_images[test_idx].tolist()
+    test_labels = all_labels[test_idx].tolist()
 
     # Save splits
     splits = {
@@ -97,28 +95,37 @@ def get_data_loaders(data_splits, batch_size=32, image_size=224):
     """
     Create PyTorch data loaders for train/val/test.
     """
-    transform = transforms.Compose([
+    train_transform = transforms.Compose([
+        transforms.Resize((image_size, image_size)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(10),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5], std=[0.5])
+    ])
+
+    val_test_transform = transforms.Compose([
         transforms.Resize((image_size, image_size)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5], std=[0.5])  # Single channel normalization
+        transforms.Normalize(mean=[0.5], std=[0.5])
     ])
 
     train_dataset = MRIImageDataset(
         data_splits['train']['images'],
         data_splits['train']['labels'],
-        transform=transform
+        transform=train_transform
     )
 
     val_dataset = MRIImageDataset(
         data_splits['val']['images'],
         data_splits['val']['labels'],
-        transform=transform
+        transform=val_test_transform
     )
 
     test_dataset = MRIImageDataset(
         data_splits['test']['images'],
         data_splits['test']['labels'],
-        transform=transform
+        transform=val_test_transform
     )
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)

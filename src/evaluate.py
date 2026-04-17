@@ -24,7 +24,9 @@ def evaluate_model(model_path, data_splits_path, output_dir):
     # Load model
     model = create_model(num_classes=3)
     checkpoint = torch.load(model_path, map_location='cpu')
-    model.load_state_dict(checkpoint['state_dict'])
+    state_dict = checkpoint['state_dict']
+    state_dict = {k.replace('model.', '', 1): v for k, v in state_dict.items() if not k.startswith('criterion')}
+    model.load_state_dict(state_dict)
     model.eval()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -87,6 +89,40 @@ def evaluate_model(model_path, data_splits_path, output_dir):
     plt.xlabel('Predicted Label')
     plt.savefig(os.path.join(output_dir, 'confusion_matrix.png'))
     plt.show()
+
+    # Training curves from training history
+    history_path = os.path.join(os.path.dirname(__file__), '..', 'models', 'training_history.json')
+    if os.path.exists(history_path):
+        with open(history_path, 'r') as f:
+            history = json.load(f)
+        if 'epoch_metrics' in history:
+            epochs = range(1, len(history['epoch_metrics']) + 1)
+            train_losses = [m.get('train_loss') for m in history['epoch_metrics']]
+            val_losses = [m.get('val_loss') for m in history['epoch_metrics']]
+            val_accs = [m.get('val_acc') for m in history['epoch_metrics']]
+
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+            ax1.plot(epochs, train_losses, 'b-o', label='Train Loss')
+            ax1.plot(epochs, val_losses, 'r-o', label='Val Loss')
+            ax1.set_title('Training and Validation Loss')
+            ax1.set_xlabel('Epoch')
+            ax1.set_ylabel('Loss')
+            ax1.legend()
+            ax1.grid(True)
+
+            ax2.plot(epochs, val_accs, 'g-o', label='Val Accuracy')
+            ax2.set_title('Validation Accuracy')
+            ax2.set_xlabel('Epoch')
+            ax2.set_ylabel('Accuracy')
+            ax2.legend()
+            ax2.grid(True)
+
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_dir, 'training_curves.png'))
+            plt.show()
+            print("Training curves saved.")
+        else:
+            print("No epoch metrics found in training history — training curves not generated.")
 
     # Save metrics
     metrics = {

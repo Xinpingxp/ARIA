@@ -1,10 +1,42 @@
 {
-  "best_model_path": "C:\\Users\\admin\\Documents\\SUTD\\ADL\\ARIA\\models\\ad-classifier-epoch=03-val_acc=1.00.ckpt",
-  "best_val_acc": 0.9978025555610657,
+  "best_model_path": "/Users/wongxinping/Documents/SUTD Y3T6/Applied deep learning/Project/ARIA/ARIA/models/ad-classifier-epoch=04-val_acc=0.92.ckpt",
+  "best_val_acc": 0.9157218933105469,
   "test_results": [
     {
-      "test_loss": 0.042775772511959076,
-      "test_acc": 0.9824205636978149
+      "test_loss": 0.1706756204366684,
+      "test_acc": 0.915895402431488
+    }
+  ],
+  "epoch_metrics": [
+    {
+      "train_loss": 0,
+      "val_loss": 1.1091747283935547,
+      "val_acc": 0.21875
+    },
+    {
+      "train_loss": 0,
+      "val_loss": 0.7054657001137514,
+      "val_acc": 0.7526473296500921
+    },
+    {
+      "train_loss": 0,
+      "val_loss": 1.08134315743685,
+      "val_acc": 0.7784824723247232
+    },
+    {
+      "train_loss": 0,
+      "val_loss": 0.9075256376495728,
+      "val_acc": 0.7408269230769231
+    },
+    {
+      "train_loss": 0,
+      "val_loss": 0.7571817753993023,
+      "val_acc": 0.758165974145891
+    },
+    {
+      "train_loss": 0,
+      "val_loss": 0.6401295622980678,
+      "val_acc": 0.7896772257111193
     }
   ]
 }
