@@ -87,3 +87,60 @@ ARIA/
 ├── requirements.txt
 └── README.md
 ```
+
+## Frontend Dashboard
+
+A React-based diagnostic interface for uploading MRI scans and viewing AI predictions.
+
+### Tech Stack
+- **Framework**: React 19
+- **Build Tool**: Vite 8
+- **Backend**: Flask API (proxied via Vite dev server)
+
+### Features
+- Drag-and-drop or click-to-upload MRI scans (.jpg, .png)
+- Real-time AI inference with loading states
+- Grad-CAM attention heatmap visualization
+- Classification probabilities for all three classes (CN / MCI / AD)
+- Risk assessment display (Low / Moderate / High)
+- Demo mode when no trained model is available
+
+### Running the Frontend
+
+**1. Start the backend API**
+```bash
+python src/api.py
+```
+The Flask server runs on `http://localhost:5001`.
+
+**2. Start the frontend dev server**
+```bash
+cd dashboard
+npm install
+npm run dev
+```
+The Vite dev server runs on `http://localhost:5173` and proxies `/api` requests to the Flask backend.
+
+**3. Build for production**
+```bash
+cd dashboard
+npm run build
+```
+Output is generated in `dashboard/dist/`.
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check, returns model load status |
+| `/predict` | POST | Upload MRI image, returns predictions and Grad-CAM heatmap |
+
+### Screenshots
+
+| Non-Demented | Very Mild Dementia |
+|:---:|:---:|
+| ![Non-Demented](FINAL%20FRONTEND%20IMAGE/non-demented.png) | ![Very Mild](FINAL%20FRONTEND%20IMAGE/very-mild%20dementia.png) |
+
+| Mild Dementia | Moderate Dementia |
+|:---:|:---:|
+| ![Mild](FINAL%20FRONTEND%20IMAGE/mild-dementia.png) | ![Moderate](FINAL%20FRONTEND%20IMAGE/moderate%20dementia.png) |
