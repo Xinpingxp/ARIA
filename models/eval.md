@@ -2,17 +2,17 @@ FROM EVALUATION
 Classification Report:
               precision    recall  f1-score   support
 
-          CN       1.00      0.96      0.98      6755
-         MCI       0.91      0.99      0.95      1365
-          AD       0.78      1.00      0.88       523
+          CN       0.99      0.91      0.95      6722
+         MCI       0.71      0.94      0.81      1373
+          AD       0.82      0.97      0.89       549
 
-    accuracy                           0.97      8643
-   macro avg       0.90      0.98      0.93      8643
-weighted avg       0.97      0.97      0.97      8643
+    accuracy                           0.92      8644
+   macro avg       0.84      0.94      0.88      8644
+weighted avg       0.93      0.92      0.92      8644
 
-AUC-ROC for CN: 0.998
-AUC-ROC for MCI: 0.999
-AUC-ROC for AD: 1.000
+AUC-ROC for CN: 0.982
+AUC-ROC for MCI: 0.980
+AUC-ROC for AD: 0.998
 
 
 
@@ -28,9 +28,10 @@ AUC-ROC for AD: 1.000
 
 FROM python src/train.py
 
-The 'train_dataloader' does not 
-have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=13` in the 
-`DataLoader` to improve performance.
+The 'test_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=13` in the `DataLoader` to improve performance.
+
+epoch 4: v_num: 7.000 train_loss: 0.458 val_loss: 0.172   
+                                                                                         val_acc: 0.916
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃        Test metric        ┃       DataLoader 0        ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
